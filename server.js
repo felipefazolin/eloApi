@@ -9,6 +9,10 @@ const bodyParser = require('body-parser'); // import body-parser
 const bookRoute = require('./routes/book'); // import routs to products
 const userRoute = require('./routes/user'); // import routs to products
 
+const cors = require('cors')
+
+app.use(cors())
+
 //////////Parsing//////////
 
 app.use(bodyParser.json()); // make parsing json in all routes
