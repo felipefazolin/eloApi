@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 // Product Schema
 const UserSchema = new mongoose.Schema({
 
-        nome: {
+        name: {
             type: String
 
         },
@@ -55,4 +55,4 @@ const UserSchema = new mongoose.Schema({
 
 
 // Export User Schema
-module.exports = mongoose.model('gentle', UserSchema);
+module.exports = mongoose.model('users', UserSchema);

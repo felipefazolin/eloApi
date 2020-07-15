@@ -1,23 +1,23 @@
 const mongoose = require('mongoose');
-var uniqueValidator = require('mongoose-unique-validator');
-
-
 
 // Product Schema
 const BookSchema = new mongoose.Schema({
 
         title: {
-            type: String,
-            unique: true
+            type: String
         },
 
-        lote: {
+        cover: {
+            type: String,
+            default: "https://www.metmuseum.org/content/img/placeholders/NoImageAvailableIcon.png"
+        },
+
+        version: {
             type: Number
         },
 
         prefix: {
             type: String,
-            unique: true,
             uppercase: true,
             required: true,
             maxlength: 4
@@ -37,7 +37,6 @@ const BookSchema = new mongoose.Schema({
 
 );
 
-BookSchema.plugin(uniqueValidator);
 
 // Export User Schema
-const Book = module.exports = mongoose.model('book', BookSchema);
+module.exports = mongoose.model('book', BookSchema);
