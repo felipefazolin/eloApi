@@ -12,9 +12,11 @@ var toObject = require('to-object'); // parse to JSON object
 
 var stringify = require('json-stable-stringify');
 
+const createError = require('http-errors')
+
 //////////ROUTES//////////
 
-router.get('/login', async function (req, res) {
+router.post('/login', async function (req, res) {
 
     try {
         //Checks email and password
@@ -29,7 +31,15 @@ router.get('/login', async function (req, res) {
         })
         // If error
         if (!loggedUser) {
-            customError("500", "E-mail ou senha inválida", "Erro interno")
+
+            const error = {
+                message: "E-mail ou senha inválida",
+                status: 401,
+                type: "Internal error"
+            }
+
+            throw error
+
         }
         // Generate token
         const token = CryptoJS.AES.encrypt(loggedUser._id.toString(), process.env.SECRET).toString();
@@ -41,38 +51,45 @@ router.get('/login', async function (req, res) {
         }, {
             new: true
         })
+
         //Error generate token
         if (!updateToken) {
-            customError("500", "Erro ao gerar token", "Erro interno")
+
+            const error = {
+                message: "Erro ao gerar token",
+                status: 401,
+                type: "Internal error"
+            }
+
+            throw error
+
+        } else {
+
+            const finish = {
+                message: "Logado",
+                status: 201,
+                type: "Success",
+                token: updateToken.token,
+                name: loggedUser.name
+            };
+
+            res.status(finish.status).json(finish)
+            return finish
         }
-        //Finish
-        res.json(updateToken.token)
-        console.log("Token gerado: " + updateToken.token)
-        return updateToken.token
 
     } catch (error) {
-        //Catched errors from the throw
-        //DISPLAY ERRORS IN THE BACK   
-        console.log(
-            `Error message--> ${error.message}` + '\n' +
-            `Error reason--> ${error.reason}` + '\n' +
-            `Error code--> ${error.code}` + '\n' +
-            `Error name--> ${error.name}` + '\n' +
-            `Error detail--> ${error.stack}`
-        );
-        //DISPLAY ERRORS IN THE FRONT 
-        //Known errors       
-        if (error.name === 'Erro interno') {
-            res.json(error.message)
-        } else {
-            //Unknown errors
-            res.json("Erro geral")
-        }
-        return error;
+        showError(error, res)
     }
 
-
 })
+
+
+
+
+// console.log(error.type)
+// console.log('Status: ', error.status)
+// console.log('Message: ', error.message)
+// console.log('Stack: ', error.stack)
 
 router.post('/register', async function (req, res) {
 
@@ -90,33 +107,31 @@ router.post('/register', async function (req, res) {
 
             await user.save()
 
-            res.json("Você foi registrado")
-            console.log("Você foi registrado")
+            const finish = {
+                message: "Você foi registrado com sucesso",
+                status: 201,
+                type: "Success"
+            };
+
+            res.status(finish.status).json(finish)
+            return finish
 
         } else {
-            customError("500", "Este e-mail já existe", "Erro interno")
+
+            const error = {
+                message: "Este e-mail já existe",
+                status: 401,
+                type: "Internal error"
+            }
+
+            throw error
         }
 
 
     } catch (error) {
-        //Catched errors from the throw
-        //DISPLAY ERRORS IN THE BACK   
-        console.log(
-            `Error message--> ${error.message}` + '\n' +
-            `Error reason--> ${error.reason}` + '\n' +
-            `Error code--> ${error.code}` + '\n' +
-            `Error name--> ${error.name}` + '\n' +
-            `Error detail--> ${error.stack}`
-        );
-        //DISPLAY ERRORS IN THE FRONT 
-        //Known errors       
-        if (error.name === 'Erro interno') {
-            res.json(error.message)
-        } else {
-            //Unknown errors
-            res.json("Erro geral")
-        }
-        return error;
+
+        showError(error, res)
+
     }
 
 })
@@ -124,80 +139,119 @@ router.post('/register', async function (req, res) {
 
 router.get('/myBooks', async function (req, res) {
 
-    const token = req.body.token
+    const token = req.query.token
     const id = CryptoJS.AES.decrypt(token, process.env.SECRET).toString(CryptoJS.enc.Utf8)
 
     try {
-        // Throw "mongoose token" error to the catch
-        if (!mongoose.Types.ObjectId.isValid(id)) {
-            customError("500", "Token inválido")
-        }
-        // FIND USER       
-        //// Try to find data in DB
-        const user = await User.findOne({
-            $and: [{
-                    '_id': id
-                },
-                {
-                    'token': token
+
+        if (token) {
+
+            // Throw "mongoose token" error to the catch
+            if (mongoose.Types.ObjectId.isValid(id)) {
+
+                // FIND USER       
+                //// Try to find data in DB
+                const user = await User.findOne({
+                    $and: [{
+                            '_id': id
+                        },
+                        {
+                            'token': token
+                        }
+                    ]
+                })
+                // Throw "data not find" error to the catch
+                if (user) {
+
+                    const pins = user.pinBook
+
+
+                    if (!pins == []) {
+
+                        //MAP LOOP
+                        const userBooksIds = await pins.map((booksMap) => {
+                            //console.log(nomeAtual);
+                            return booksMap.bookId
+                        })
+
+                        //Find multiple ids book
+                        IDs = userBooksIds
+                        const books = await Book.find({
+                            _id: IDs
+                        })
+
+                        const finish = {
+                            message: "Listando seus livros",
+                            status: 201,
+                            type: "Success",
+                            books: books
+                        };
+
+                        res.status(finish.status).json(finish)
+                        return finish
+
+                    } else {
+
+                        const finish = {
+                            message: "Nenhum livro cadastrado",
+                            status: 201,
+                            type: "Success",
+                            books: []
+                        };
+                        res.status(finish.status).json(finish)
+                        return finish
+                    }
+
+                } else {
+
+                    const error = {
+                        message: "Usuário não encontrado",
+                        status: 401,
+                        type: "Internal error"
+                    }
+
+                    throw error
                 }
-            ]
-        })
-        // Throw "data not find" error to the catch
-        if (user) {
-            const pins = user.pinBook
 
-            //MAP LOOP
-            const userBooksIds = await pins.map((booksMap) => {
-                //console.log(nomeAtual);
-                return booksMap.bookId
-            })
+            } else {
 
-            //Find multiple ids book
-            IDs = userBooksIds
-            const books = await Book.find({
-                _id: IDs
-            }, {
-                title: 1,
-                prefix: 1
-            })
+                const error = {
+                    message: "Token inválido",
+                    status: 401,
+                    type: "Internal error"
+                }
 
-            //Convert to object
-            res.json(toObject(books))
-            return books;
+                throw error
+            }
 
         } else {
-            customError("500", "Usuário não encontrado", "Erro interno")
-        }
+            const error = {
+                message: "Você não pode acessar essa página sem estar logado",
+                status: 401,
+                type: "Internal error"
+            }
+            throw error
 
+        }
 
     } catch (error) {
-        //Catched errors from the throw
-        //DISPLAY ERRORS IN THE BACK   
-        console.log(
-            `Error message--> ${error.message}` + '\n' +
-            `Error reason--> ${error.reason}` + '\n' +
-            `Error code--> ${error.code}` + '\n' +
-            `Error name--> ${error.name}` + '\n' +
-            `Error detail--> ${error.stack}`
-        );
-        //DISPLAY ERRORS IN THE FRONT 
-        //Known errors       
-        if (error.name === 'Erro interno') {
-            res.json(error.message)
-        } else {
-            //Unknown errors
-            res.json("Erro geral")
-        }
-        return error;
+
+        showError(error, res)
+
     }
+
+
 })
 
 
-router.get('/addPin', async function (req, res) {
+router.post('/addPin', async function (req, res) {
 
-    const token = req.body.token;
+    const token = req.body.token
     const id = CryptoJS.AES.decrypt(token, process.env.SECRET).toString(CryptoJS.enc.Utf8);
+
+
+
+
 
     try {
         // Throw "mongoose token" error to the catch
@@ -219,6 +273,7 @@ router.get('/addPin', async function (req, res) {
         if (user) {
             console.log("Usuário autenticado " + user._id);
 
+            console.log(req.body.pin)
             //Verify pin book
             const book = await Book.findOne({
                 'pin': req.body.pin
@@ -251,55 +306,104 @@ router.get('/addPin', async function (req, res) {
                 })
 
                 if (pin) {
-                    console.log('pin cadastrado')
-                    console.log(pin.pinBook)
 
-                    res.json(toObject(pin.pinBook))
-                    return pin.pinBook
+
+
+                    const finish = {
+                        message: "PIN adicionado com sucesso",
+                        status: 201,
+                        type: "Success",
+                        pin: pin.pinBook
+
+                    };
+
+                    res.status(finish.status).json(finish)
+                    return finish
+
+
 
                 } else {
-                    customError("500", "Você já tem um PIN desse livro", "Erro interno")
+                    const error = {
+                        message: "Você já tem um PIN desse livro",
+                        status: 401,
+                        type: "Internal error"
+                    }
+                    throw error
+
+
                 }
 
             } else {
-                customError("500", "Este pin não é de nenhum livro", "Erro interno")
+
+                console.log(req.body.pin)
+
+                var str = req.body.pin;
+
+                var newStr = str.replace(/ /g, "");
+                var n = newStr.length;
+                console.log(n)
+
+
+
+
+                const error = {
+                    message: "Este pin não é de nenhum livro",
+                    status: 401,
+                    type: "Internal error"
+                }
+                throw error
+
             }
 
         } else {
-            customError("500", "Usuário não encontrado", "Erro interno")
+            const error = {
+                message: "Usuário não encontrado",
+                status: 401,
+                type: "Internal error"
+            }
+            throw error
         }
 
     } catch (error) {
-        //Catched errors from the throw
-        //DISPLAY ERRORS IN THE BACK   
-        console.log(
-            `Error message--> ${error.message}` + '\n' +
-            `Error reason--> ${error.reason}` + '\n' +
-            `Error code--> ${error.code}` + '\n' +
-            `Error name--> ${error.name}` + '\n' +
-            `Error detail--> ${error.stack}`
-        );
-        //DISPLAY ERRORS IN THE FRONT 
-        //Known errors       
-        if (error.name === 'Erro interno') {
-            res.json(error.message)
-        } else {
-            //Unknown errors
-            res.json("Erro geral")
-        }
-        return error
+        showError(error, res)
     }
 })
 
-//Generate custom known errors and throw to the catch  
-function customError(code, message, name) {
-    const customError = {
-        code: code,
-        message: message,
-        name: name
+function showError(error, res) {
+    if (error.type === 'Internal error') {
+        //Known errors
+        res.status(error.status).json({
+            status: error.status,
+            message: error.message,
+            type: error.type
+        })
+
+        return error;
+
+    } else {
+        //Unknown errors
+        res.status(401).json({
+            status: 401,
+            message: "Erro",
+            type: "Unknown error"
+        })
+
+        return error;
+
     }
-    throw customError
 }
+
+//Generate custom known errors and throw to the catch  
+// function customError(code, message, name) {
+//     const customError = {
+//         code: code,
+//         message: message,
+//         name: name
+//     }
+//     throw customError
+// }
+
+
 
 // expourt router
 module.exports = router;
