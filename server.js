@@ -1,4 +1,4 @@
-const express = require('express')
+const express = require('express') // import express
 const app = express(); // import express
 const mongoose = require('mongoose'); // import mongoose (db package)
 require('dotenv').config(); // hide variables
@@ -6,7 +6,7 @@ require('dotenv').config(); // hide variables
 const bodyParser = require('body-parser'); // import body-parser
 
 
-const bookRoute = require('./routes/book'); // import routs to products
+const adminRoute = require('./routes/admin'); // import routs to products
 const userRoute = require('./routes/user'); // import routs to products
 
 const cors = require('cors')
@@ -22,7 +22,7 @@ app.use(bodyParser.urlencoded({
 
 
 //////////Set routes//////////
-app.use('/book', bookRoute); // set routs to products
+app.use('/admin', adminRoute); // set routs to products
 app.use('/user', userRoute); // set routs to products
 
 
