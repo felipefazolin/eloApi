@@ -36,29 +36,21 @@ router.get('/findBookTitle', async function (req, res) {
             console.log(toObject(bookTitle))
             res.json(toObject(bookTitle))
         } else {
-            customError("500", "Este livro não existe", "Erro interno")
+
+
+            const error = {
+                message: "Este livro não existe",
+                status: 401,
+                type: "Internal error"
+            }
+    
+            throw error
+
         }
 
 
     } catch (error) {
-        //Catched errors from the throw
-        //DISPLAY ERRORS IN THE BACK   
-        console.log(
-            `Error message--> ${error.message}` + '\n' +
-            `Error reason--> ${error.reason}` + '\n' +
-            `Error code--> ${error.code}` + '\n' +
-            `Error title--> ${error.title}` + '\n' +
-            `Error detail--> ${error.stack}`
-        );
-        //DISPLAY ERRORS IN THE FRONT 
-        //Known errors       
-        if (error.title === 'Erro interno') {
-            res.json(error.message)
-        } else {
-            //Unknown errors
-            res.json("Erro geral")
-        }
-        return error;
+        showError(error, res)
     }
 
 })
@@ -75,7 +67,7 @@ router.get('/allBooks', async function (req, res) {
 
     try {
 
-        const books = await Book.find({},{cover:1, title:1});
+        const books = await Book.find({}, { cover: 1, title: 1 });
 
         if (books != "") {
 
@@ -91,28 +83,19 @@ router.get('/allBooks', async function (req, res) {
             return finish
 
         } else {
-            customError("500", "Nenhum livro encontrado", "Erro interno")
+
+            const error = {
+                message: "Nenhum livro encontrado",
+                status: 401,
+                type: "Internal error"
+            }
+            throw error
         }
 
     } catch (error) {
-        //Catched errors from the throw
-        //DISPLAY ERRORS IN THE BACK   
-        console.log(
-            `Error message--> ${error.message}` + '\n' +
-            `Error reason--> ${error.reason}` + '\n' +
-            `Error code--> ${error.code}` + '\n' +
-            `Error title--> ${error.title}` + '\n' +
-            `Error detail--> ${error.stack}`
-        );
-        //DISPLAY ERRORS IN THE FRONT 
-        //Known errors       
-        if (error.title === 'Erro interno') {
-            res.json(error.message)
-        } else {
-            //Unknown errors
-            res.json("Erro geral")
-        }
-        return error;
+
+        showError(error, res)
+
     }
 
 })
@@ -130,10 +113,12 @@ router.post('/register', async function (req, res) {
     try {
         const book = await Book.findOne({
             $or: [{
-                    'title': req.body.title,
-                }, {
-                    'prefix': req.body.prefix
-                }
+                'title': req.body.title,
+            }, {
+                'prefix': req.body.prefix
+            }, {
+                'cover': req.body.cover
+            }
 
             ]
         });
@@ -151,34 +136,68 @@ router.post('/register', async function (req, res) {
 
             await book.save()
 
-            res.json("O livro foi registrado")
-            console.log(book.title + " " + book.prefix)
+            const finish = {
+                message: "O livro foi cadastrado",
+                status: 201,
+                type: "Success",
+                title: book.title,
+                prefix: book.prefix,
+                cover: book.cover        
+        };
 
-        } else {
-            customError("500", "Este livro já existe", "Erro interno")
-        }
+        res.status(finish.status).json(finish)
+        return finish
 
-
-    } catch (error) {
-        //Catched errors from the throw
-        //DISPLAY ERRORS IN THE BACK   
-        console.log(
-            `Error message--> ${error.message}` + '\n' +
-            `Error reason--> ${error.reason}` + '\n' +
-            `Error code--> ${error.code}` + '\n' +
-            `Error title--> ${error.title}` + '\n' +
-            `Error detail--> ${error.stack}`
-        );
-        //DISPLAY ERRORS IN THE FRONT 
-        //Known errors       
-        if (error.title === 'Erro interno') {
-            res.json(error.message)
-        } else {
-            //Unknown errors
-            res.json("Erro geral")
-        }
-        return error;
     }
+
+
+        if (req.body.title == book.title) {
+
+        const error = {
+            message: "Este título já existe",
+            status: 401,
+            type: "Internal error"
+        }
+
+        throw error
+
+    }
+
+
+
+
+
+
+
+
+    if (req.body.prefix == book.prefix) {
+
+        const error = {
+            message: "Este prefixo já existe",
+            status: 401,
+            type: "Internal error"
+        }
+
+        throw error
+    }
+
+
+
+    if (req.body.cover == book.cover) {
+
+        const error = {
+            message: "Esta capa já existe",
+            status: 401,
+            type: "Internal error"
+        }
+
+        throw error
+    }
+
+
+} catch (error) {
+    showError(error, res)
+}
 
 })
 
@@ -235,16 +254,38 @@ async function geraPin(qtdPin, prefix, version) {
 }
 
 
+function showError(error, res) {
+    if (error.type === 'Internal error') {
+        //Known errors
+        res.status(error.status).json({
+            status: error.status,
+            message: error.message,
+            type: error.type
+        })
 
-//Generate custom known errors and throw to the catch  
-function customError(code, message, title) {
-    const customError = {
-        code: code,
-        message: message,
-        title: title
+        return error;
+
+    } else {
+        //Unknown errors
+        res.status(401).json({
+            status: 401,
+            message: "Erro",
+            type: "Unknown error"
+        })
+        console.log(error)
+
+        return error;
+
     }
-    throw customError
 }
+
+
+
+
+
+
+
+
 
 
 module.exports = router; // export router
