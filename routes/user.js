@@ -85,6 +85,54 @@ router.post('/login', async function (req, res) {
 
 
 
+router.get('/verify', async function (req, res) {
+
+    console.log(req.query.email)
+
+    const user = await User.findOne({
+        'email': req.query.email
+    });
+
+
+    try {
+        
+
+        if (!user) {    
+            
+            console.log(req.query.email)
+
+            const finish = {
+                message: "Este e-mail está disponível",
+                status: 200,
+                type: "Success"
+            };
+
+            res.status(finish.status).json(finish)
+            return finish
+
+        } else {
+
+            const error = {
+                message: "Este e-mail já está cadastrado",
+                status: 401,
+                type: "Internal error"
+            }
+
+            throw error
+        }
+
+
+    } catch (error) {
+
+        showError(error, res)
+
+    }
+
+})
+
+
+
+
 
 // console.log(error.type)
 // console.log('Status: ', error.status)
