@@ -75,10 +75,9 @@ router.get('/allBooks', async function (req, res) {
 
     try {
 
-        const books = await Book.find({});
+        const books = await Book.find({},{cover:1, title:1});
 
         if (books != "") {
-
 
             //Finish
             var finish = {
