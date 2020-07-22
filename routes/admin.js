@@ -60,6 +60,50 @@ router.get('/findBookTitle', async function (req, res) {
 
 
 
+router.get('/singleBook', async function (req, res) {
+
+    try {
+
+       
+        const book = await Book.findById({
+            "_id": req.query.singleBook
+        },{pin:0});
+
+        if (book != "") {
+
+            //Finish
+            var finish = {
+                message: "Exibindo conteúdo do livro",
+                book: book,
+                status: 201
+            };
+
+            res.status(finish.status).json(finish)
+
+            return finish
+
+        } else {
+
+            const error = {
+                message: "Livro não encontrado",
+                status: 401,
+                type: "Internal error"
+            }
+            throw error
+        }
+
+    } catch (error) {
+
+        showError(error, res)
+
+    }
+
+})
+
+
+
+
+
 
 
 
