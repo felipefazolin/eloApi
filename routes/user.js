@@ -22,11 +22,11 @@ router.post('/login', async function (req, res) {
         //Checks email and password
         const loggedUser = await User.findOne({
             $and: [{
-                    email: req.body.email
-                },
-                {
-                    password: req.body.password
-                }
+                email: req.body.email
+            },
+            {
+                password: req.body.password
+            }
             ]
         })
         // If error
@@ -95,10 +95,10 @@ router.get('/verify', async function (req, res) {
 
 
     try {
-        
 
-        if (!user) {    
-            
+
+        if (!user) {
+
             console.log(req.query.email)
 
             const finish = {
@@ -201,11 +201,11 @@ router.get('/myBooks', async function (req, res) {
                 //// Try to find data in DB
                 const user = await User.findOne({
                     $and: [{
-                            '_id': id
-                        },
-                        {
-                            'token': token
-                        }
+                        '_id': id
+                    },
+                    {
+                        'token': token
+                    }
                     ]
                 })
                 // Throw "data not find" error to the catch
@@ -310,98 +310,119 @@ router.post('/addPin', async function (req, res) {
         //// Try to find data in DB
         const user = await User.findOne({
             $and: [{
-                    '_id': id
-                },
-                {
-                    'token': token
-                }
+                '_id': id
+            },
+            {
+                'token': token
+            }
             ]
         });
+
+
         // Throw "data not find" error to the catch
         if (user) {
             console.log("Usuário autenticado " + user._id);
 
             console.log(req.body.pin)
-            //Verify pin book
-            const book = await Book.findOne({
-                'pin': req.body.pin
+
+            //Verify if PIN exists in other user
+            const verifyDuplicatedPin = await User.findOne({
+                'pinBook.bookPin': req.body.pin
             });
 
-            if (book) {
-                console.log("Este PIN consta no livro " + book.title);
+            if (verifyDuplicatedPin) {              
 
-                const pin = await User.findOneAndUpdate({
-                    $and: [{
-                        '_id': user._id,
-                        'pinBook.bookPin': {
-                            $ne: req.body.pin, //Não salvar PINS iguais               
-                        },
-                        'pinBook.bookId': {
-                            $ne: book._id, //Não salvar PIN do mesmo livro            
-                        }
-                    }]
-                }, {
-                    $addToSet: {
+                const error = {
+                    message: "Este PIN já está sendo usado",
+                    status: 401,
+                    type: "Internal error"
+                }
+                throw error                
 
-                        pinBook: [{
-                            bookPin: req.body.pin,
-                            bookTitle: book.title,
-                            bookId: book._id,
+                // if (verifyDuplicatedPin._id == user._id) {
+                //     console.log("Este PIN é seu")
+                // }else{
+                //     console.log("Este PIN é de outra pessoa")
+                // }
+
+            } else {
+
+                //console.log("Ninguem cadastrou esse PIN")
+
+                //Verify pin book
+                const book = await Book.findOne({
+                    'pin': req.body.pin
+                });
+
+                if (book) {
+                    console.log("Este PIN é do livro " + book.title);
+
+                    const pin = await User.findOneAndUpdate({
+                        $and: [{
+                            '_id': user._id,
+                            'pinBook.bookPin': {
+                                $ne: req.body.pin, //Não salvar PINS iguais               
+                            },
+                            'pinBook.bookId': {
+                                $ne: book._id, //Não salvar PIN do mesmo livro            
+                            }
                         }]
+                    }, {
+                        $addToSet: {
+
+                            pinBook: [{
+                                bookPin: req.body.pin,
+                                bookTitle: book.title,
+                                bookId: book._id,
+                            }]
+                        }
+                    }, {
+                        new: true
+                    })
+
+                    if (pin) {
+
+                        const finish = {
+                            message: "PIN adicionado com sucesso",
+                            status: 201,
+                            type: "Success",
+                            pin: pin.pinBook
+
+                        };
+
+                        res.status(finish.status).json(finish)
+                        return finish
+
+                    } else {
+                        const error = {
+                            message: "Você já tem um PIN desse livro",
+                            status: 401,
+                            type: "Internal error"
+                        }
+                        throw error
                     }
-                }, {
-                    new: true
-                })
-
-                if (pin) {
-
-
-
-                    const finish = {
-                        message: "PIN adicionado com sucesso",
-                        status: 201,
-                        type: "Success",
-                        pin: pin.pinBook
-
-                    };
-
-                    res.status(finish.status).json(finish)
-                    return finish
-
-
 
                 } else {
+
+                    console.log(req.body.pin)
+
+                    var str = req.body.pin;
+
+                    var newStr = str.replace(/ /g, "");
+                    var n = newStr.length;
+                    console.log(n)
+
                     const error = {
-                        message: "Você já tem um PIN desse livro",
+                        message: "Este pin não é de nenhum livro",
                         status: 401,
                         type: "Internal error"
                     }
                     throw error
 
-
                 }
-
-            } else {
-
-                console.log(req.body.pin)
-
-                var str = req.body.pin;
-
-                var newStr = str.replace(/ /g, "");
-                var n = newStr.length;
-                console.log(n)
-
-
-
-
-                const error = {
-                    message: "Este pin não é de nenhum livro",
-                    status: 401,
-                    type: "Internal error"
-                }
-                throw error
 
             }
+
 
         } else {
             const error = {
