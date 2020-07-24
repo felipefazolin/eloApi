@@ -302,6 +302,7 @@ router.post('/addPin', async function (req, res) {
 
 
     try {
+
         // Throw "mongoose token" error to the catch
         if (!mongoose.Types.ObjectId.isValid(id)) {
             customError("500", "Token inválido")
@@ -437,6 +438,75 @@ router.post('/addPin', async function (req, res) {
         showError(error, res)
     }
 })
+
+
+
+
+
+
+
+
+router.get('/myAccount', async function (req, res) {
+
+
+    const token = req.query.token
+    const id = CryptoJS.AES.decrypt(token, process.env.SECRET).toString(CryptoJS.enc.Utf8);
+
+     // Throw "mongoose token" error to the catch
+     if (!mongoose.Types.ObjectId.isValid(id)) {
+        customError("500", "Token inválido")
+    }
+
+
+    try {
+
+        const userData = await User.findOne({
+            "_id": id
+        });
+
+
+
+        if (userData != "") {
+
+            //console.log(userData)
+
+            const finish = {
+                message: "Olá " + userData.name,
+                status: 201,
+                type: "Success",
+               userData
+            };
+
+            res.status(finish.status).json(finish)
+            return finish
+
+
+        } else {
+
+
+            const error = {
+                message: "Este usuário não existe",
+                status: 401,
+                type: "Internal error"
+            }
+    
+            throw error
+
+        }
+
+
+    } catch (error) {
+        showError(error, res)
+    }
+
+})
+
+
+
+
+
+
+
 
 function showError(error, res) {
     if (error.type === 'Internal error') {
