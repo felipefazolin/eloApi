@@ -187,6 +187,10 @@ router.post('/register', async function (req, res) {
 })
 
 
+
+
+
+
 router.get('/myBooks', async function (req, res) {
 
     const token = req.query.token
@@ -500,6 +504,71 @@ router.get('/myAccount', async function (req, res) {
     }
 
 })
+
+
+
+
+
+
+
+router.put('/updateUser', async function (req, res) {
+
+    const token = req.body.token
+    const id = CryptoJS.AES.decrypt(token, process.env.SECRET).toString(CryptoJS.enc.Utf8);
+
+     // Throw "mongoose token" error to the catch
+     if (!mongoose.Types.ObjectId.isValid(id)) {
+        customError("500", "Token inválido")
+    }
+
+
+    const userUpdate = await User.findOneAndUpdate({
+        "_id": id
+    }, req.body)
+
+
+
+    try {
+      
+
+        if (userUpdate) {            
+
+            const finish = {
+                message: "Atualizado com sucesso",
+                status: 201,
+                type: "Success",
+                userData:req.body
+            };
+
+            res.status(finish.status).json(finish)
+
+            console.log(userUpdate)
+            
+            return finish
+
+        } else {
+
+            const error = {
+                message: "Este usuário não existe",
+                status: 401,
+                type: "Internal error"
+            }
+
+            throw error
+        }
+
+
+    } catch (error) {
+
+        showError(error, res)
+
+    }
+
+})
+
+
+
+
 
 
 
