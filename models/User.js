@@ -4,52 +4,63 @@ const mongoose = require('mongoose');
 // Product Schema
 const UserSchema = new mongoose.Schema({
 
-        name: {
+    name: {
+        type: String
+
+    },
+
+    email: {
+        type: String
+
+    },
+
+
+    password: {
+        type: String
+    },
+
+    token: {
+        type: String,
+        default: ""
+    },
+
+
+
+    pinBook: [{
+
+        bookTitle: {
             type: String
-
         },
-
-        email: {
-            type: String
-
-        },
-
-
-        password: {
+        bookPin: {
             type: String
         },
-
-        token: {
-            type: String,
-            default: ""
+        bookId: {
+            type: String
         },
-
-
-
-        pinBook: [{
-
-            bookTitle: {
-                type: String
-            },
-            bookPin: {
-                type: String
-            },
-            bookId: {
-                type: String
-            },
-            pinDate: {
-                type: Date,
-                default: Date.now
-            }
-
-        }],
-
-        date: {
+        pinDate: {
             type: Date,
             default: Date.now
         }
 
+    }],
+
+    city: {
+        type: String
+
+    },
+
+    state: {
+        type: String
+
+    },
+
+
+    date: {
+        type: Date,
+        default: Date.now
     }
+
+}
 
 );
 

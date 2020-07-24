@@ -151,6 +151,8 @@ router.post('/register', async function (req, res) {
                 'name': req.body.name,
                 'email': req.body.email,
                 'password': req.body.password,
+                'city': req.body.city,
+                'state': req.body.state,
             });
 
             await user.save()
@@ -463,8 +465,6 @@ router.get('/myAccount', async function (req, res) {
         const userData = await User.findOne({
             "_id": id
         });
-
-
 
         if (userData != "") {
 
