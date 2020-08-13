@@ -28,6 +28,19 @@ const BookSchema = new mongoose.Schema({
 
         },
 
+        karaoke: {
+            type: String        
+        },
+
+        music: {
+            type: String        
+        },
+
+        video: {
+            type: String        
+        },
+
+
         date: {
             type: Date,
             default: Date.now
