@@ -43,7 +43,7 @@ router.get('/findBookTitle', async function (req, res) {
                 status: 401,
                 type: "Internal error"
             }
-    
+
             throw error
 
         }
@@ -64,10 +64,12 @@ router.get('/singleBook', async function (req, res) {
 
     try {
 
-       
+
         const book = await Book.findById({
             "_id": req.query.singleBook
-        },{pin:0});
+        }, {
+            pin: 0
+        });
 
         if (book != "") {
 
@@ -111,7 +113,11 @@ router.get('/allBooks', async function (req, res) {
 
     try {
 
-        const books = await Book.find({}, { cover: 1, title: 1 });
+        const books = await Book.find({}, {
+            cover: 1,
+            title: 1,
+            sequence:1
+        }).sort({'compilation': '1', 'title': '1' });
 
         if (books != "") {
 
@@ -157,12 +163,12 @@ router.post('/register', async function (req, res) {
     try {
         const book = await Book.findOne({
             $or: [{
-                'title': req.body.title,
-            }, {
-                'prefix': req.body.prefix
-            }, {
-                'cover': req.body.cover
-            }
+                    'title': req.body.title,
+                }, {
+                    'prefix': req.body.prefix
+                }, {
+                    'cover': req.body.cover
+                }
 
             ]
         });
@@ -170,12 +176,37 @@ router.post('/register', async function (req, res) {
         if (!book) {
 
             const book = new Book({
+
+                //PRINCIPAL
                 'title': req.body.title,
+                'compilation': req.body.compilation,
+                'cover': req.body.cover,
+                'description': req.body.description,
+
+                //MÍDIAS
+                'karaoke': req.body.karaoke,
+                'music': req.body.music,
+                'video': req.body.video,
+
+                //AUTORES
+                'writers': [req.body.text1,req.body.text2],
+                'illustrators': [req.body.illustration1,req.body.illustration2],
+                'musicians': [req.body.music1,req.body.music2],  
+
+
+                //DETALHES
+                'release': req.body.release,
+                'isbn': req.body.isbn,
+                'dimensions': req.body.dimensions,
+                'pages': req.body.pages,
+                'recommendation': req.body.recommendation,
+
+                //PIN
                 'prefix': req.body.prefix,
                 'version': req.body.version,
                 'pin': await geraPin(req.body.qtdPin, req.body.prefix, req.body.version),
                 'qtd': req.body.qtdPin,
-                'cover': req.body.cover
+
             });
 
             await book.save()
@@ -186,26 +217,27 @@ router.post('/register', async function (req, res) {
                 type: "Success",
                 title: book.title,
                 prefix: book.prefix,
-                cover: book.cover        
-        };
+                cover: book.cover
+            };
 
-        res.status(finish.status).json(finish)
-        return finish
+            res.status(finish.status).json(finish)
+            return finish
 
-    }
+        }
 
 
         if (req.body.title == book.title) {
 
-        const error = {
-            message: "Este título já existe",
-            status: 401,
-            type: "Internal error"
+            const error = {
+                message: "Este título já existe",
+                status: 401,
+                type: "Internal error"
+            }
+
+            throw error
+
         }
 
-        throw error
-
-    }
 
 
 
@@ -213,39 +245,70 @@ router.post('/register', async function (req, res) {
 
 
 
+        if (req.body.prefix == book.prefix) {
 
-    if (req.body.prefix == book.prefix) {
+            const error = {
+                message: "Este prefixo já existe",
+                status: 401,
+                type: "Internal error"
+            }
 
-        const error = {
-            message: "Este prefixo já existe",
-            status: 401,
-            type: "Internal error"
+            throw error
         }
 
-        throw error
-    }
 
 
+        if (req.body.cover == book.cover) {
 
-    if (req.body.cover == book.cover) {
+            const error = {
+                message: "Esta capa já existe",
+                status: 401,
+                type: "Internal error"
+            }
 
-        const error = {
-            message: "Esta capa já existe",
-            status: 401,
-            type: "Internal error"
+            throw error
         }
 
-        throw error
+
+    } catch (error) {
+        showError(error, res)
     }
-
-
-} catch (error) {
-    showError(error, res)
-}
 
 })
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+var teste = ''
+
+
+
+
+
+
+// geraPrefix()
+
+// async function geraPrefix() {
+
+//     const rdnNumber = chance.string({ length: 4,
+//         pool: 'BCDEFGHIJKLMNOPQRSTVWXYZbcdefghijklmnopqrstwxyz1234567890' })
+    
+
+//     // MAP LOOP
+//     console.log(rdnNumber) 
+//     console.log('aaa')
+
+// }
+
+
+
+
+
+
+
+
+
 
 async function geraPin(qtdPin, prefix, version) {
 
