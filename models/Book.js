@@ -40,7 +40,47 @@ const BookSchema = new mongoose.Schema({
             type: String        
         },
 
+        compilation: {
+            type: String        
+        },
 
+
+
+        writers: {
+            type: Array,
+
+        },
+        illustrators: {
+            type: Array,
+
+        },
+
+        musicians: {
+            type: Array,
+
+        },  
+
+        release: {
+            type: String        
+        },
+
+        isbn: {
+            type: String        
+        },
+
+        dimensions: {
+            type: String        
+        },
+
+        pages: {
+            type: String        
+        },
+
+        recommendation: {
+            type: String        
+        },
+      
+      
         date: {
             type: Date,
             default: Date.now
